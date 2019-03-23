@@ -31,7 +31,7 @@ function turnClick(square) {
         //the human player takes a turn
         turn(square.target.id, huPlayer)
         //before ai player takes a turn, check if there's a tie
-        if(!checkTie()) turn(bestSpot(), aiPlayer);
+        if (!checkWin(origBoard, huPlayer) && !checkTie()) turn(bestSpot(), aiPlayer);
     }
     
 }
@@ -65,7 +65,7 @@ function gameOver(gameWon) {
             gameWon.player == huPlayer ? "blue" : "red";
     }
     // Make it so the user cannot click any more squares because the game is over
-    for(var i = 0; i <cells.length; i++) {
+    for(var i = 0; i < cells.length; i++) {
         cells[i].removeEventListener('click', turnClick, false);
     }
 
@@ -82,7 +82,7 @@ function emptySquares() {
 }
 
 function bestSpot() {
-    return emptySquares()[0];
+    return minimax(origBoard, aiPlayer).index;
 }
 
 function checkTie() {
@@ -97,4 +97,79 @@ function checkTie() {
     }
     return false;
 }
-//create a basic ai and create a winner box.
+
+function minimax(newBoard, player) {
+    //find the indexes of the available spots on the board using empty square and set it to avilSpots
+    var availSpots = emptySquares();
+
+    //check for terminal states, meaning someone winning and return a value accordingly
+    if(checkWin(newBoard, huPlayer)) {
+        return {score: -10};
+    } else if (checkWin(newBoard, aiPlayer)) {
+        return {score: 10};
+    } else if (availSpots.length === 0) {
+        return {score: 0};
+    }
+
+    //collect the scores from each of the empty spots to evaluate later
+    //make an array called moves
+    var moves = [];
+    //loop through empty spots while collecting each moves index and score in an obj called move
+    for(var i = 0; i < availSpots.length; i++) {
+        var move = {};
+        //set the index number of the spot that was stored as a num in the origBoar to
+        //index property of the move object
+        move.index = newBoard[availSpots[i]];
+
+        //set empty spot on the newBoard to the current player
+        newBoard[availSpots[i]] = player;
+
+        //call the minimax function with the other player & the newly changed newBoard
+        if(player == aiPlayer) {
+            var result = minimax(newBoard, huPlayer);        
+            //store the object resulting from the minimax function that includes a score
+            //prop to the score prop of the move object
+            move.score = result.score;
+        } else {
+			var result = minimax(newBoard, aiPlayer);
+			move.score = result.score;
+		}
+
+        //minimax resets newBoard to what it was before
+        newBoard[availSpots[i]] = move.index;
+        //pushes the move obj to the moves array
+        moves.push(move);
+    }
+
+    //evaluate the best move in the moves array
+    var bestMove;
+    //it should chose the move with the highest score when AI is playing
+    //and the move with the lowest score when the Human is playing
+    if(player === aiPlayer) {
+        //if the player is AI it sets the variable bestScore to the lowest possible
+        //score and loops through the moves array
+        var bestScore = -10000;
+        for (var i = 0; i < moves.length; i++) {
+            //if the move has a higher score than bestScore the algorithm stores that move
+            if(moves[i].score > bestScore) {
+                //incase there are moves with similar scores only the first one will be stored
+                bestScore = moves[i].score;
+                bestMove = i;
+            } 
+        }
+    } else { //same eval happens when player is huPlayer
+        //but this time will be set to a high score
+        var bestScore = 10000;
+        for (var i = 0; i < moves.length; i++) {
+            //if the move has a higher score than bestScore the algorithm stores that move
+            if(moves[i].score < bestScore) { //minimax looks for a move with the lowest score to store
+                //incase there are moves with similar scores only the first one will be stored
+                bestScore = moves[i].score;
+                bestMove = i;
+            } 
+        }
+    }
+
+    //minimax returns the object stored in best move
+    return moves[bestMove];
+}
