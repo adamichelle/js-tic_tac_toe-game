@@ -32,4 +32,33 @@ function turnClick(square) {
 function turn(squareId, player) {
     origBoard[squareId] = player;
     document.getElementById(squareId).innerText = player;
+    let gameWon = checkWin(origBoard, player);
+    if(gameWon) gameOver(gameWon)
+}
+
+function checkWin(board, player) {
+    //find places on the board that have already been played in
+    let plays = board.reduce((a, e, i) => 
+        (e === player) ? a.concat(i) : a, [])
+        let gameWon = null;
+        //check if the game has been won.
+        for (let [index, win] of winCombos.entries()) {
+            if (win.every(elem => plays.indexOf(elem) > -1)) {
+                gameWon = {index: index, player: player};
+                break;
+            }
+        }
+        return gameWon;
+}
+
+function gameOver(gameWon) {
+    // Highlight all the squares that are part of the winning combination
+    for(let index of winCombos[gameWon.index]) {
+        document.getElementById(index).style.backgroundColor = 
+            gameWon.player == huPlayer ? "blue" : "red";
+    }
+    // Make it so the user cannot click any more squares because the game is over
+    for(var i = 0; i <cells.length; i++) {
+        cells[i].removeEventListener('click', turnClick, false);
+    }
 }
